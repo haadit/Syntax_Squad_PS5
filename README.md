@@ -25,6 +25,9 @@ A modern web application that provides accurate travel time predictions using ad
 ### Prediction Interface
 ![Prediction Interface](screenshots/prediction.png)
 
+### Dashboard
+![Prediction History](screenshots/Dashboard.png)
+
 ### Traffic Visualization
 ![Traffic Visualization](screenshots/traffic.png)
 

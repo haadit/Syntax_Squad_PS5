@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from model import predict_travel_time
+from dotenv import load_dotenv
 import os
 import requests
 from typing import List, Tuple
@@ -11,27 +12,28 @@ from supabase import create_client
 app = Flask(__name__)
 CORS(app, resources={
     r"/*": {
-        "origins": ["http://localhost:5174"],
+        "origins": ["http://localhost:5173", "http://localhost:5174"],
         "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-        "allow_headers": ["Content-Type", "Authorization"],
+        "allow_headers": ["Content-Type", "Authorization", "X-Requested-With"],
         "supports_credentials": True,
         "expose_headers": ["Content-Type", "Authorization"],
         "max_age": 3600
     }
 })
 
-@app.before_request
-def handle_preflight():
-    if request.method == "OPTIONS":
-        response = jsonify({})
-        response.headers.add("Access-Control-Allow-Origin", "http://localhost:5174")
-        response.headers.add("Access-Control-Allow-Headers", "Content-Type,Authorization")
-        response.headers.add("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS")
-        response.headers.add("Access-Control-Allow-Credentials", "true")
-        return response, 200
+@app.after_request
+def after_request(response):
+    response.headers.add('Access-Control-Allow-Origin', request.headers.get('Origin', '*'))
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization,X-Requested-With')
+    response.headers.add('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS')
+    response.headers.add('Access-Control-Allow-Credentials', 'true')
+    return response
 
 # Mapbox access token for geocoding
-MAPBOX_ACCESS_TOKEN = 'pk.eyJ1IjoiYWxleHJ1c3NvMzEwOCIsImEiOiJjbTlib3R3a2gwaTVrMmxzajFxdjdncHZ5In0.L1yZ0i6r-fCCJEl3ElAbaw'
+# Load environment variables from .env file
+load_dotenv()
+
+MAPBOX_ACCESS_TOKEN = os.environ.get('MAPBOX_ACCESS_TOKEN')
 
 # Authentication endpoints
 @app.route('/auth/register', methods=['POST'])
