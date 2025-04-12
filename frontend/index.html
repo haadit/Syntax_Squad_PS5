@@ -1,0 +1,1451 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Commute Time Predictor</title>
+    <!-- Mapbox Dependencies -->
+    <link
+      href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css"
+      rel="stylesheet"
+    />
+    <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
+    <script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.0.0/mapbox-gl-geocoder.min.js"></script>
+    <link
+      rel="stylesheet"
+      href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.0.0/mapbox-gl-geocoder.css"
+      type="text/css"
+    />
+    <!-- Supabase Client -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <link
+      href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+    />
+    <style>
+      .container-width {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 1rem;
+      }
+      .gradient-bg {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      }
+
+      /* Animation Classes */
+      .fade-in {
+        animation: fadeIn 1s ease-in;
+      }
+
+      .slide-up {
+        animation: slideUp 0.8s ease-out;
+      }
+
+      .scale-in {
+        animation: scaleIn 0.5s ease-out;
+      }
+
+      .pulse {
+        animation: pulse 2s infinite;
+      }
+
+      .float {
+        animation: float 3s ease-in-out infinite;
+      }
+
+      /* New Animation Classes */
+      .rotate-in {
+        animation: rotateIn 0.8s ease-out;
+      }
+
+      .bounce-in {
+        animation: bounceIn 0.8s ease-out;
+      }
+
+      .glow {
+        animation: glow 2s ease-in-out infinite;
+      }
+
+      .wave {
+        animation: wave 1.5s ease-in-out infinite;
+      }
+
+      .parallax {
+        background-attachment: fixed;
+        background-position: center;
+        background-repeat: no-repeat;
+        background-size: cover;
+      }
+
+      /* Keyframes */
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+
+      @keyframes slideUp {
+        from {
+          transform: translateY(20px);
+          opacity: 0;
+        }
+        to {
+          transform: translateY(0);
+          opacity: 1;
+        }
+      }
+
+      @keyframes scaleIn {
+        from {
+          transform: scale(0.9);
+          opacity: 0;
+        }
+        to {
+          transform: scale(1);
+          opacity: 1;
+        }
+      }
+
+      @keyframes pulse {
+        0% {
+          transform: scale(1);
+        }
+        50% {
+          transform: scale(1.05);
+        }
+        100% {
+          transform: scale(1);
+        }
+      }
+
+      @keyframes float {
+        0% {
+          transform: translateY(0px);
+        }
+        50% {
+          transform: translateY(-10px);
+        }
+        100% {
+          transform: translateY(0px);
+        }
+      }
+
+      /* New Keyframes */
+      @keyframes rotateIn {
+        from {
+          transform: rotate(-180deg) scale(0);
+          opacity: 0;
+        }
+        to {
+          transform: rotate(0) scale(1);
+          opacity: 1;
+        }
+      }
+
+      @keyframes bounceIn {
+        0% {
+          transform: scale(0.3);
+          opacity: 0;
+        }
+        50% {
+          transform: scale(1.05);
+          opacity: 0.8;
+        }
+        70% {
+          transform: scale(0.9);
+          opacity: 0.9;
+        }
+        100% {
+          transform: scale(1);
+          opacity: 1;
+        }
+      }
+
+      @keyframes glow {
+        0% {
+          box-shadow: 0 0 5px rgba(118, 75, 162, 0.5);
+        }
+        50% {
+          box-shadow: 0 0 20px rgba(118, 75, 162, 0.8);
+        }
+        100% {
+          box-shadow: 0 0 5px rgba(118, 75, 162, 0.5);
+        }
+      }
+
+      @keyframes wave {
+        0% {
+          transform: translateY(0);
+        }
+        50% {
+          transform: translateY(-10px);
+        }
+        100% {
+          transform: translateY(0);
+        }
+      }
+
+      /* Hover Effects */
+      .feature-card {
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      .feature-card:hover {
+        transform: translateY(-10px) scale(1.02);
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1),
+          0 10px 10px -5px rgba(0, 0, 0, 0.04);
+      }
+
+      .nav-link {
+        position: relative;
+        overflow: hidden;
+      }
+
+      .nav-link::before {
+        content: "";
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: 2px;
+        background: linear-gradient(90deg, #667eea, #764ba2);
+        transform: translateX(-100%);
+        transition: transform 0.3s ease;
+      }
+
+      .nav-link:hover::before {
+        transform: translateX(0);
+      }
+
+      /* Form Input Animation */
+      .form-input {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      .form-input:focus {
+        transform: scale(1.02);
+        box-shadow: 0 0 0 3px rgba(118, 75, 162, 0.2);
+      }
+
+      /* Loading Animation */
+      .loading {
+        position: relative;
+        overflow: hidden;
+      }
+
+      .loading::after {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          rgba(255, 255, 255, 0.2),
+          transparent
+        );
+        animation: loading 1.5s infinite;
+      }
+
+      @keyframes loading {
+        0% {
+          transform: translateX(-100%);
+        }
+        100% {
+          transform: translateX(100%);
+        }
+      }
+
+      /* Page Transition */
+      .page-transition {
+        opacity: 0;
+        transform: translateY(20px);
+        animation: pageIn 1s ease-out forwards;
+      }
+
+      /* Traffic Visualization Styles */
+      .traffic-visualization {
+        position: relative;
+        width: 100%;
+        margin: 20px 0;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      }
+
+      .map-container {
+        width: 100%;
+        height: 500px;
+        border-radius: 8px;
+      }
+
+      .traffic-legend {
+        background: white;
+        padding: 15px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        position: absolute;
+        bottom: 20px;
+        left: 20px;
+        z-index: 1;
+        backdrop-filter: blur(5px);
+        background-color: rgba(255, 255, 255, 0.9);
+      }
+
+      .legend-item {
+        display: flex;
+        align-items: center;
+        margin: 8px 0;
+        font-size: 14px;
+      }
+
+      .color-box {
+        width: 20px;
+        height: 20px;
+        margin-right: 10px;
+        border-radius: 4px;
+        border: 1px solid rgba(0, 0, 0, 0.1);
+      }
+
+      .heavy {
+        background: #ff0000;
+      }
+      .medium {
+        background: #ffa500;
+      }
+      .light {
+        background: #008000;
+      }
+
+      @keyframes pageIn {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      /* Loading Screen Transition */
+      .loading-screen {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+        animation: fadeOut 0.5s ease-out forwards;
+        animation-delay: 0.5s;
+      }
+
+      @keyframes fadeOut {
+        from {
+          opacity: 1;
+        }
+        to {
+          opacity: 0;
+          display: none;
+        }
+      }
+    </style>
+  </head>
+  <body class="bg-gray-50">
+    <!-- Authentication UI -->
+    <div id="auth-container" class="fixed top-4 right-4 z-50">
+      <div id="auth-message" class="hidden mb-4"></div>
+      
+      <!-- Login Button (shown when not logged in) -->
+      <button id="show-auth-button" onclick="showLoginForm()" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-all duration-200 flex items-center gap-2">
+        <i class="fas fa-user"></i>
+        <span>Login / Register</span>
+      </button>
+
+      <!-- Auth Modal Background -->
+      <div id="auth-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center">
+        <!-- Login Form -->
+        <div id="login-form" class="bg-white p-8 rounded-xl shadow-2xl w-96 hidden">
+          <div class="flex justify-between items-center mb-6">
+            <h3 class="text-2xl font-bold text-gray-800">Login</h3>
+            <button onclick="closeAuthModal()" class="text-gray-500 hover:text-gray-700">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+          <form onsubmit="handleLogin(event)">
+            <div class="mb-4">
+              <label class="block text-gray-700 mb-2" for="login-email">Email</label>
+              <input type="email" id="login-email" class="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+            </div>
+            <div class="mb-6">
+              <label class="block text-gray-700 mb-2" for="login-password">Password</label>
+              <input type="password" id="login-password" class="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+            </div>
+            <button type="submit" class="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-all duration-200">
+              Login
+            </button>
+          </form>
+          <p class="mt-4 text-center text-gray-600">
+            Don't have an account? 
+            <button onclick="showRegisterForm()" class="text-blue-600 hover:underline font-medium">Register</button>
+          </p>
+        </div>
+
+        <!-- Register Form -->
+        <div id="register-form" class="bg-white p-8 rounded-xl shadow-2xl w-96 hidden">
+          <div class="flex justify-between items-center mb-6">
+            <h3 class="text-2xl font-bold text-gray-800">Create Account</h3>
+            <button onclick="closeAuthModal()" class="text-gray-500 hover:text-gray-700">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+          <form onsubmit="handleRegister(event)">
+            <div class="mb-4">
+              <label class="block text-gray-700 mb-2" for="register-email">Email</label>
+              <input type="email" id="register-email" class="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+            </div>
+            <div class="mb-6">
+              <label class="block text-gray-700 mb-2" for="register-password">Password</label>
+              <input type="password" id="register-password" class="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+            </div>
+            <button type="submit" class="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-all duration-200">
+              Register
+            </button>
+          </form>
+          <p class="mt-4 text-center text-gray-600">
+            Already have an account? 
+            <button onclick="showLoginForm()" class="text-blue-600 hover:underline font-medium">Login</button>
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- User Info (shown when logged in) -->
+    <div id="user-info" class="fixed top-4 right-4 z-50 hidden">
+      <div class="bg-white p-4 rounded-lg shadow-lg">
+        <div class="flex items-center gap-3">
+          <div class="bg-blue-100 p-2 rounded-full">
+            <i class="fas fa-user text-blue-600"></i>
+          </div>
+          <div>
+            <p class="text-sm text-gray-600">Welcome,</p>
+            <p id="user-email" class="font-semibold text-gray-800"></p>
+          </div>
+        </div>
+        <button id="logout-button" onclick="handleLogout()" class="mt-3 w-full text-red-500 hover:text-red-700 font-medium flex items-center justify-center gap-2">
+          <i class="fas fa-sign-out-alt"></i>
+          <span>Logout</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Prediction History -->
+    <div id="prediction-history" class="fixed top-0 right-0 h-full w-96 bg-white shadow-lg transform translate-x-full transition-transform duration-300 overflow-y-auto z-50">
+      <div class="sticky top-0 bg-white p-4 border-b">
+        <div class="flex justify-between items-center">
+          <h2 class="text-xl font-bold">Prediction History</h2>
+          <button onclick="togglePredictionHistory()" class="text-gray-500 hover:text-gray-700 p-2">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+      </div>
+      <div id="history-list" class="p-4">
+        <!-- History items will be added here -->
+      </div>
+    </div>
+
+    <!-- Loading Screen -->
+    <div class="loading-screen">
+      <div class="text-white text-2xl font-bold">
+        <i class="fas fa-car-side mr-2"></i>
+        Welcome to Commute Predictor
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="page-transition">
+      <!-- Navigation -->
+      <nav class="bg-white shadow-sm fixed w-full top-0 z-50">
+        <div class="container-width mx-auto">
+          <div class="flex justify-between items-center h-16">
+            <div class="flex items-center">
+              <a
+                href="#"
+                class="text-xl font-bold text-gray-900 nav-link rotate-in"
+                >Commute Time Predictor</a
+              >
+            </div>
+            <div class="hidden md:flex items-center space-x-8">
+              <a href="#" class="text-gray-600 hover:text-gray-900 nav-link"
+                >Home</a
+              >
+              <a
+                href="#about"
+                class="text-gray-600 hover:text-gray-900 nav-link"
+                >About Us</a
+              >
+              <a
+                href="#predictionSection"
+                class="text-gray-600 hover:text-gray-900 nav-link"
+                >Predict ETA</a
+              >
+            </div>
+            <div class="md:hidden">
+              <button class="text-gray-600 hover:text-gray-900">
+                <i class="fas fa-bars text-xl"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </nav>
+
+      <!-- Hero Section -->
+      <section class="gradient-bg text-white py-20 mt-16 parallax">
+        <div class="container-width mx-auto">
+          <div class="max-w-3xl mx-auto text-center">
+            <h1 class="text-4xl md:text-6xl font-bold mb-6 fade-in">
+              Smart Commute Time Prediction
+            </h1>
+            <p class="text-xl mb-8 slide-up">
+              Get accurate travel time predictions using advanced AI technology
+            </p>
+            <a
+              href="#predictionSection"
+              class="bg-white text-purple-600 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition duration-300 pulse glow"
+            >
+              Try it Now
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <!-- Features Section -->
+      <section class="py-16 bg-white">
+        <div class="container-width mx-auto">
+          <h2 class="text-3xl font-bold text-center mb-12 slide-up">
+            Features
+          </h2>
+          <div class="grid md:grid-cols-3 gap-8">
+            <div
+              class="p-6 bg-gray-50 rounded-lg feature-card scale-in bounce-in"
+            >
+              <div class="text-purple-600 mb-4 float wave">
+                <i class="fas fa-bolt text-4xl"></i>
+              </div>
+              <h3 class="text-xl font-semibold mb-2">Real-time Predictions</h3>
+              <p class="text-gray-600">
+                Get instant ETA predictions based on current traffic conditions
+              </p>
+            </div>
+            <div
+              class="p-6 bg-gray-50 rounded-lg feature-card scale-in bounce-in"
+              style="animation-delay: 0.2s"
+            >
+              <div
+                class="text-purple-600 mb-4 float wave"
+                style="animation-delay: 0.2s"
+              >
+                <i class="fas fa-chart-line text-4xl"></i>
+              </div>
+              <h3 class="text-xl font-semibold mb-2">Historical Data</h3>
+              <p class="text-gray-600">
+                View your past predictions and actual travel times
+              </p>
+            </div>
+            <div
+              class="p-6 bg-gray-50 rounded-lg feature-card scale-in bounce-in"
+              style="animation-delay: 0.4s"
+            >
+              <div
+                class="text-purple-600 mb-4 float wave"
+                style="animation-delay: 0.4s"
+              >
+                <i class="fas fa-clock text-4xl"></i>
+              </div>
+              <h3 class="text-xl font-semibold mb-2">Time Optimization</h3>
+              <p class="text-gray-600">
+                Plan your trips better with accurate arrival time estimates
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- About Us Section -->
+      <section id="about" class="py-16 bg-gray-50">
+        <div class="container-width mx-auto">
+          <h2 class="text-4xl font-bold text-center mb-8">About Us</h2>
+          <p class="text-center text-gray-600 mb-16 max-w-3xl mx-auto">
+            A new developer in the web3 world excited to use the defi and make
+            interesting dapps helping people
+          </p>
+
+          <h3 class="text-3xl font-bold text-center mb-12">Meet Our Team</h3>
+          <div class="grid md:grid-cols-4 gap-8 mb-16">
+            <div class="bg-white p-8 rounded-lg text-center shadow-md">
+              <img
+                src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRaDIKahxspzaDV6ji9X7pvSdG4SkFJGSeQug&ss"
+                alt="Aakash Singh"
+                class="w-32 h-32 rounded-full mx-auto mb-4 object-cover shadow-lg border-4 border-white"
+              />
+              <h4 class="text-xl font-semibold mb-2">Aakash Singh</h4>
+              <p class="text-purple-600 mb-4">AI Specialist</p>
+              <p class="text-gray-600">
+                Full-stack developer with expertise in ML
+              </p>
+              <div class="flex justify-center mt-4 space-x-4">
+                <a href="#" class="text-gray-600 hover:text-gray-900"
+                  ><i class="fab fa-github"></i
+                ></a>
+                <a href="#" class="text-gray-600 hover:text-gray-900"
+                  ><i class="fab fa-linkedin"></i
+                ></a>
+                <a href="#" class="text-gray-600 hover:text-gray-900"
+                  ><i class="fab fa-twitter"></i
+                ></a>
+              </div>
+            </div>
+
+            <div class="bg-white p-8 rounded-lg text-center shadow-md">
+              <img
+                src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSooIwgr8aYF_fLivrnFZrmuN6k7pjC5QCeVg&s"
+                alt="Ananya Kanthraj"
+                class="w-32 h-32 rounded-full mx-auto mb-4 object-cover shadow-lg border-4 border-white"
+              />
+              <h4 class="text-xl font-semibold mb-2">Ananya Kanthraj</h4>
+              <p class="text-purple-600 mb-4">Frontend Developer</p>
+              <p class="text-gray-600">
+                Passionate about creating intuitive interfaces
+              </p>
+              <div class="flex justify-center mt-4 space-x-4">
+                <a href="#" class="text-gray-600 hover:text-gray-900"
+                  ><i class="fab fa-github"></i
+                ></a>
+                <a href="#" class="text-gray-600 hover:text-gray-900"
+                  ><i class="fab fa-linkedin"></i
+                ></a>
+                <a href="#" class="text-gray-600 hover:text-gray-900"
+                  ><i class="fab fa-twitter"></i
+                ></a>
+              </div>
+            </div>
+
+            <div class="bg-white p-8 rounded-lg text-center shadow-md">
+              <img
+                src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSZ6owYycIjHyym-beutUqsLWhryFYu6TwdoA&s"
+                alt="Bhoomika Mohan"
+                class="w-32 h-32 rounded-full mx-auto mb-4 object-cover shadow-lg border-4 border-white"
+              />
+              <h4 class="text-xl font-semibold mb-2">Bhoomika Mohan</h4>
+              <p class="text-purple-600 mb-4">Backend Developer</p>
+              <p class="text-gray-600">Expert in scalable systems and APIs</p>
+              <div class="flex justify-center mt-4 space-x-4">
+                <a href="#" class="text-gray-600 hover:text-gray-900"
+                  ><i class="fab fa-github"></i
+                ></a>
+                <a href="#" class="text-gray-600 hover:text-gray-900"
+                  ><i class="fab fa-linkedin"></i
+                ></a>
+                <a href="#" class="text-gray-600 hover:text-gray-900"
+                  ><i class="fab fa-twitter"></i
+                ></a>
+              </div>
+            </div>
+
+            <div class="bg-white p-8 rounded-lg text-center shadow-md">
+              <img
+                src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQAeHjWzgCqUOM2tYVQmAabkmlJQz1OQMafgQ&s"
+                alt="Aditya Anjan Jha"
+                class="w-32 h-32 rounded-full mx-auto mb-4 object-cover shadow-lg border-4 border-white"
+              />
+              <h4 class="text-xl font-semibold mb-2">Aditya Anjan Jha</h4>
+              <p class="text-purple-600 mb-4">Machine Learning Engineer</p>
+              <p class="text-gray-600">
+                Trained the model and deployed it on the backend.
+              </p>
+              <div class="flex justify-center mt-4 space-x-4">
+                <a href="#" class="text-gray-600 hover:text-gray-900"
+                  ><i class="fab fa-github"></i
+                ></a>
+                <a href="#" class="text-gray-600 hover:text-gray-900"
+                  ><i class="fab fa-linkedin"></i
+                ></a>
+                <a href="#" class="text-gray-600 hover:text-gray-900"
+                  ><i class="fab fa-twitter"></i
+                ></a>
+              </div>
+            </div>
+          </div>
+
+          <h3 class="text-3xl font-bold text-center mb-12">Our Values</h3>
+          <div class="grid md:grid-cols-3 gap-8">
+            <div class="bg-white p-8 rounded-lg text-center shadow-md">
+              <h4 class="text-xl font-semibold text-blue-500 mb-4">
+                Innovation
+              </h4>
+              <p class="text-gray-600">
+                Pushing the boundaries of technology to enhance commute
+                prediction
+              </p>
+            </div>
+
+            <div class="bg-white p-8 rounded-lg text-center shadow-md">
+              <h4 class="text-xl font-semibold text-blue-500 mb-4">
+                Accessibility
+              </h4>
+              <p class="text-gray-600">
+                Making commute prediction available to everyone, everywhere
+              </p>
+            </div>
+
+            <div class="bg-white p-8 rounded-lg text-center shadow-md">
+              <h4 class="text-xl font-semibold text-blue-500 mb-4">Quality</h4>
+              <p class="text-gray-600">
+                Ensuring accurate and reliable prediction and feedback
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Prediction Form -->
+      <section id="predictionSection" class="py-16 bg-gray-50">
+        <div class="container-width mx-auto">
+          <div
+            class="max-w-2xl mx-auto bg-white rounded-lg shadow-md p-8 scale-in glow"
+          >
+            <h2 class="text-2xl font-bold mb-6">Predict Your Travel Time</h2>
+            <form id="predictionForm">
+              <div class="mb-4">
+                <label class="block text-gray-700 mb-2" for="start"
+                  >Starting Point</label
+                >
+                <input
+                  type="text"
+                  id="start"
+                  class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600 form-input"
+                  required
+                />
+              </div>
+              <div class="mb-4">
+                <label class="block text-gray-700 mb-2" for="destination"
+                  >Destination</label
+                >
+                <input
+                  type="text"
+                  id="destination"
+                  class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600 form-input"
+                  required
+                />
+              </div>
+              <div class="mb-4">
+                <label class="block text-gray-700 mb-2" for="time"
+                  >Day of Week</label
+                >
+                <select
+                  id="time"
+                  class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600 form-input"
+                  required
+                >
+                  <option value="">Select a day</option>
+                  <option value="monday">Monday</option>
+                  <option value="tuesday">Tuesday</option>
+                  <option value="wednesday">Wednesday</option>
+                  <option value="thursday">Thursday</option>
+                  <option value="friday">Friday</option>
+                  <option value="saturday">Saturday</option>
+                  <option value="sunday">Sunday</option>
+                </select>
+              </div>
+              <div class="mb-4">
+                <label class="block text-gray-700 mb-2" for="departureTime"
+                  >Departure Time</label
+                >
+                <input
+                  type="time"
+                  id="departureTime"
+                  class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600 form-input"
+                  required
+                />
+              </div>
+              <button
+                type="submit"
+                class="w-full bg-purple-600 text-white py-3 rounded-lg font-semibold hover:bg-purple-700 transition duration-300 hover:scale-105 loading"
+              >
+                Get Prediction
+              </button>
+            </form>
+            <div id="predictionResult" class="mt-4 hidden">
+              <div class="p-4 bg-green-50 rounded-lg">
+                <h3 class="text-lg font-semibold text-green-800">
+                  Predicted Travel Time
+                </h3>
+                <p
+                  class="text-2xl font-bold text-green-600"
+                  id="predictedTime"
+                ></p>
+                <p class="text-sm text-green-600" id="predictionDetails"></p>
+              </div>
+            </div>
+            <div id="errorMessage" class="mt-4 hidden">
+              <div class="p-4 bg-red-50 rounded-lg">
+                <p class="text-red-600" id="errorText"></p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Traffic Visualization -->
+      <section id="trafficVisualization" class="py-16 bg-white">
+        <div class="container-width mx-auto">
+          <h2 class="text-2xl font-bold mb-6 text-center">
+            Traffic Visualization
+          </h2>
+          <div class="traffic-visualization">
+            <div id="traffic-map" class="map-container"></div>
+            <div class="traffic-legend">
+              <h3 class="text-lg font-semibold mb-2">Traffic Conditions</h3>
+              <div class="legend-item">
+                <span class="color-box heavy"></span>
+                <span>Heavy Traffic</span>
+              </div>
+              <div class="legend-item">
+                <span class="color-box medium"></span>
+                <span>Moderate Traffic</span>
+              </div>
+              <div class="legend-item">
+                <span class="color-box light"></span>
+                <span>Light Traffic</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Footer -->
+      <footer class="bg-white py-8">
+        <div class="container-width mx-auto">
+          <div class="text-center text-gray-500">
+            <p>
+              © <span id="year"></span> Commute Time Predictor. All rights
+              reserved.
+            </p>
+          </div>
+        </div>
+      </footer>
+    </div>
+
+    <!-- Scripts -->
+    <script src="auth.js"></script>
+    <script>
+      // Update copyright year
+      document.getElementById("year").textContent = new Date().getFullYear();
+
+      // Mapbox Implementation
+      let map;
+      let trafficUpdateInterval;
+
+      // Initialize map when the page loads
+      document.addEventListener("DOMContentLoaded", () => {
+        // Set Mapbox access token - Replace with your public token (pk.*)
+        mapboxgl.accessToken =
+          "pk.eyJ1IjoiYWxleHJ1c3NvMzEwOCIsImEiOiJjbTlib3R3a2gwaTVrMmxzajFxdjdncHZ5In0.L1yZ0i6r-fCCJEl3ElAbaw";
+
+        // Initialize map
+        map = new mapboxgl.Map({
+          container: "traffic-map",
+          style: "mapbox://styles/mapbox/streets-v12",
+          center: [-74.5, 40], // Default center (New York)
+          zoom: 12,
+        });
+
+        // Add navigation controls
+        map.addControl(new mapboxgl.NavigationControl(), "top-right");
+
+        // Add geocoder for address search
+        const geocoder = new MapboxGeocoder({
+          accessToken: mapboxgl.accessToken,
+          mapboxgl: mapboxgl,
+          placeholder: "Search for a location",
+          marker: false,
+        });
+
+        map.addControl(geocoder);
+
+        // Add error handling for map load
+        map.on("error", (e) => {
+          console.error("Mapbox error:", e.error);
+          document.getElementById("traffic-map").innerHTML = `
+            <div class="p-4 bg-red-50 rounded-lg">
+              <p class="text-red-600">Error loading map. Please check your access token and internet connection.</p>
+            </div>
+          `;
+        });
+
+        // Add loading state
+        map.on("load", () => {
+          console.log("Map loaded successfully");
+        });
+      });
+
+      // Function to update traffic visualization
+      function updateTrafficVisualization(trafficData) {
+        if (!map) return;
+
+        // Clear existing layers
+        if (map.getLayer("traffic-layer")) {
+          map.removeLayer("traffic-layer");
+          map.removeSource("traffic-source");
+        }
+
+        // Add traffic data as a GeoJSON source
+        map.addSource("traffic-source", {
+          type: "geojson",
+          data: {
+            type: "FeatureCollection",
+            features: trafficData.route_segments.map((segment) => ({
+              type: "Feature",
+              properties: {
+                traffic_level: segment.traffic_level, // Use the traffic level from backend
+              },
+              geometry: {
+                type: "LineString",
+                coordinates: [
+                  [segment.start_point[1], segment.start_point[0]],
+                  [segment.end_point[1], segment.end_point[0]],
+                ],
+              },
+            })),
+          },
+        });
+
+        // Add traffic layer with color coding
+        map.addLayer({
+          id: "traffic-layer",
+          type: "line",
+          source: "traffic-source",
+          paint: {
+            "line-color": [
+              "match",
+              ["get", "traffic_level"],
+              "peak",
+              "#FF0000", // Red for peak hours
+              "normal",
+              "#FFA500", // Yellow for weekends
+              "light",
+              "#008000", // Green for non-peak
+              "#808080",
+            ],
+            "line-width": 4,
+            "line-opacity": 0.8,
+          },
+        });
+
+        // Update legend text based on traffic level
+        const legendItems = document.querySelectorAll(
+          ".legend-item span:last-child"
+        );
+        if (legendItems.length >= 3) {
+          const trafficLevel = trafficData.route_segments[0].traffic_level;
+          legendItems[0].textContent =
+            trafficLevel === "peak" ? "Peak Hour Traffic" : "Heavy Traffic";
+          legendItems[1].textContent =
+            trafficLevel === "normal" ? "Weekend Traffic" : "Normal Traffic";
+          legendItems[2].textContent = "Light Traffic";
+        }
+
+        // Fit map to bounds of the route
+        const coordinates = trafficData.route_segments.flatMap((segment) => [
+          [segment.start_point[1], segment.start_point[0]],
+          [segment.end_point[1], segment.end_point[0]],
+        ]);
+
+        const bounds = coordinates.reduce((bounds, coord) => {
+          return bounds.extend(coord);
+        }, new mapboxgl.LngLatBounds(coordinates[0], coordinates[0]));
+
+        map.fitBounds(bounds, {
+          padding: 50,
+          maxZoom: 15,
+        });
+      }
+
+      // Function to fetch and update traffic data
+      async function fetchTrafficData(start, destination) {
+        try {
+          const response = await fetch(
+            `http://localhost:5000/api/traffic?start=${encodeURIComponent(
+              start
+            )}&destination=${encodeURIComponent(destination)}`
+          );
+
+          // Check if response is JSON
+          const contentType = response.headers.get("content-type");
+          if (!contentType || !contentType.includes("application/json")) {
+            const text = await response.text();
+            console.error("Server response:", text);
+            throw new Error(
+              "Server returned non-JSON response. Please check if the backend server is running."
+            );
+          }
+
+          const trafficData = await response.json();
+
+          // Check if response has the expected structure
+          if (!trafficData || !trafficData.route_segments) {
+            throw new Error("Invalid traffic data format");
+          }
+
+          updateTrafficVisualization(trafficData);
+        } catch (error) {
+          console.error("Error fetching traffic data:", error);
+          // Show error message to user
+          const mapContainer = document.getElementById("traffic-map");
+          if (mapContainer) {
+            mapContainer.innerHTML = `
+              <div class="p-4 bg-red-50 rounded-lg">
+                <p class="text-red-600">Unable to load traffic data. Please check if the backend server is running at http://localhost:5000</p>
+                <p class="text-sm text-red-500 mt-2">Error details: ${error.message}</p>
+              </div>
+            `;
+          }
+        }
+      }
+
+      // Function to start traffic updates
+      function startTrafficUpdates(start, destination) {
+        // Clear any existing interval
+        if (trafficUpdateInterval) {
+          clearInterval(trafficUpdateInterval);
+        }
+
+        // Fetch traffic data immediately
+        fetchTrafficData(start, destination);
+
+        // Set up interval for updates
+        trafficUpdateInterval = setInterval(() => {
+          fetchTrafficData(start, destination);
+        }, 60000); // Update every minute
+      }
+
+      // Enhanced scroll animations
+      document.addEventListener("DOMContentLoaded", () => {
+        const observer = new IntersectionObserver(
+          (entries) => {
+            entries.forEach((entry) => {
+              if (entry.isIntersecting) {
+                entry.target.classList.add("scale-in", "bounce-in");
+              }
+            });
+          },
+          {
+            threshold: 0.1,
+          }
+        );
+
+        document
+          .querySelectorAll(".feature-card, .form-input")
+          .forEach((el) => observer.observe(el));
+      });
+
+      // Form submission handler
+      document
+        .getElementById("predictionForm")
+        .addEventListener("submit", async function (e) {
+          e.preventDefault();
+
+          // Show loading state
+          const submitButton = this.querySelector('button[type="submit"]');
+          submitButton.disabled = true;
+          submitButton.innerHTML =
+            '<i class="fas fa-spinner fa-spin"></i> Predicting...';
+
+          try {
+            // Get form values
+            const start = document.getElementById("start").value;
+            const destination = document.getElementById("destination").value;
+            const day = document.getElementById("time").value;
+            const departureTime =
+              document.getElementById("departureTime").value;
+
+            // Store form values for context
+            const formValues = {
+              start,
+              destination,
+              day,
+              departureTime,
+            };
+
+            // Start traffic updates
+            startTrafficUpdates(start, destination);
+
+            // Prepare request data
+            const requestData = {
+              start_point: start,
+              destination: destination,
+              day_of_week: day,
+              departure_time: departureTime,
+            };
+
+            // Make API call
+            const { data: { session } } = await supabase.auth.getSession();
+            const response = await fetch("http://localhost:5000/predict", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${session?.access_token}`
+              },
+              body: JSON.stringify(requestData),
+            });
+
+            if (!response.ok) {
+              throw new Error("Failed to get prediction");
+            }
+
+            const data = await response.json();
+
+            // Display prediction result
+            const resultDiv = document.getElementById("predictionResult");
+            const errorDiv = document.getElementById("errorMessage");
+
+            if (data.error) {
+              errorDiv.classList.remove("hidden");
+              resultDiv.classList.add("hidden");
+              document.getElementById("errorText").textContent = data.error;
+            } else {
+              errorDiv.classList.add("hidden");
+              resultDiv.classList.remove("hidden");
+
+              // Format the prediction details
+              const predictedTime = data.predicted_time;
+              const hours = Math.floor(predictedTime / 60);
+              const minutes = Math.round(predictedTime % 60);
+
+              document.getElementById("predictedTime").textContent = `${
+                hours > 0 ? hours + " hour" + (hours > 1 ? "s" : "") + " " : ""
+              }${minutes} minutes`;
+
+              // Add additional context
+              const [hoursOfDay] = formValues.departureTime.split(":");
+              const isPeakHour =
+                (parseInt(hoursOfDay) >= 7 && parseInt(hoursOfDay) <= 10) ||
+                (parseInt(hoursOfDay) >= 17 && parseInt(hoursOfDay) <= 20);
+              const isWeekend = ["saturday", "sunday"].includes(
+                formValues.day.toLowerCase()
+              );
+
+              let context = `From ${formValues.start} to ${formValues.destination}. `;
+              if (isPeakHour) context += "Peak hour traffic expected. ";
+              if (isWeekend) context += "Weekend travel conditions. ";
+              if (!isPeakHour && !isWeekend)
+                context += "Normal traffic conditions.";
+
+              document.getElementById("predictionDetails").textContent =
+                context;
+
+              // Reset form while keeping the prediction visible
+              document.getElementById("predictionForm").reset();
+
+              // Add a subtle animation to the prediction result
+              resultDiv.classList.add("scale-in");
+              setTimeout(() => {
+                resultDiv.classList.remove("scale-in");
+              }, 500);
+            }
+          } catch (error) {
+            console.error("Error:", error);
+            const errorDiv = document.getElementById("errorMessage");
+            const resultDiv = document.getElementById("predictionResult");
+            errorDiv.classList.remove("hidden");
+            resultDiv.classList.add("hidden");
+            document.getElementById("errorText").textContent =
+              "Failed to get prediction. Please try again later.";
+          } finally {
+            // Reset button state
+            submitButton.disabled = false;
+            submitButton.innerHTML = "Get Prediction";
+          }
+        });
+
+      // Add this to your existing JavaScript
+      async function getPredictionHistory() {
+        try {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (!session) {
+            showMessage('Please log in to view prediction history', 'error');
+            return;
+          }
+
+          // Show loading state
+          const historyList = document.getElementById('history-list');
+          historyList.innerHTML = `
+            <div class="text-center py-4">
+              <i class="fas fa-spinner fa-spin text-blue-500 text-2xl"></i>
+              <p class="mt-2 text-gray-600">Loading predictions...</p>
+            </div>
+          `;
+
+          const response = await fetch('http://localhost:5000/predictions/history', {
+            headers: {
+              'Authorization': `Bearer ${session.access_token}`,
+              'Content-Type': 'application/json'
+            }
+          });
+
+          const data = await response.json();
+          console.log('History data:', data); // Debug log
+
+          if (!response.ok) {
+            throw new Error(data.error || `HTTP error! status: ${response.status}`);
+          }
+
+          if (!Array.isArray(data) || data.length === 0) {
+            historyList.innerHTML = `
+              <div class="text-center text-gray-500 py-4">
+                <i class="fas fa-history text-gray-400 text-4xl mb-2"></i>
+                <p>No predictions found</p>
+                <p class="text-sm mt-2">Make a prediction to see it here!</p>
+              </div>
+            `;
+            return;
+          }
+          
+          displayPredictionHistory(data);
+        } catch (error) {
+          console.error('Error fetching prediction history:', error);
+          document.getElementById('history-list').innerHTML = `
+            <div class="text-center text-red-500 py-4">
+              <i class="fas fa-exclamation-circle text-red-500 text-4xl mb-2"></i>
+              <p>${error.message || 'Failed to fetch prediction history'}</p>
+              <button onclick="getPredictionHistory()" class="mt-2 text-blue-500 hover:underline">
+                Try Again
+              </button>
+            </div>
+          `;
+        }
+      }
+
+      function displayPredictionHistory(history) {
+        const historyList = document.getElementById('history-list');
+        historyList.innerHTML = '';
+
+        history.forEach(prediction => {
+          const item = document.createElement('div');
+          item.className = 'mb-6 p-4 border rounded-lg bg-white shadow hover:shadow-md transition-all duration-200';
+          
+          // Format the predicted time
+          const hours = Math.floor(prediction.predicted_time / 60);
+          const minutes = Math.round(prediction.predicted_time % 60);
+          const formattedTime = `${hours > 0 ? hours + " hour" + (hours > 1 ? "s" : "") + " " : ""}${minutes} minutes`;
+          
+          // Format the date
+          const date = new Date(prediction.created_at);
+          const formattedDate = date.toLocaleString('en-US', {
+            weekday: 'short',
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+          });
+
+          // Capitalize location names
+          const startPoint = prediction.start_point.charAt(0).toUpperCase() + prediction.start_point.slice(1);
+          const destination = prediction.destination.charAt(0).toUpperCase() + prediction.destination.slice(1);
+          
+          item.innerHTML = `
+            <div class="space-y-3">
+              <div class="flex items-center justify-between">
+                <div class="flex-1">
+                  <div class="flex items-center text-gray-800">
+                    <span class="font-semibold">${startPoint}</span>
+                    <i class="fas fa-arrow-right mx-2 text-blue-500"></i>
+                    <span class="font-semibold">${destination}</span>
+                  </div>
+                  <div class="mt-2">
+                    <span class="text-lg font-bold text-blue-600">${formattedTime}</span>
+                  </div>
+                </div>
+                <div class="text-right">
+                  <span class="inline-block px-3 py-1 rounded-full text-sm ${
+                    prediction.predicted_time > 60 ? 'bg-red-100 text-red-700' :
+                    prediction.predicted_time > 30 ? 'bg-yellow-100 text-yellow-700' :
+                    'bg-green-100 text-green-700'
+                  }">
+                    ${prediction.predicted_time > 60 ? 'Long' :
+                      prediction.predicted_time > 30 ? 'Medium' : 'Quick'} Trip
+                  </span>
+                </div>
+              </div>
+              <div class="text-sm text-gray-500 space-y-1">
+                <p>
+                  <i class="far fa-calendar mr-2"></i>
+                  ${prediction.day_of_week.charAt(0).toUpperCase() + prediction.day_of_week.slice(1)} at ${prediction.departure_time}
+                </p>
+                <p>
+                  <i class="far fa-clock mr-2"></i>
+                  Predicted on ${formattedDate}
+                </p>
+              </div>
+            </div>
+          `;
+          historyList.appendChild(item);
+        });
+
+        // Add refresh button at the bottom
+        const refreshButton = document.createElement('button');
+        refreshButton.className = 'w-full mt-4 py-3 px-4 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors duration-200 flex items-center justify-center gap-2 sticky bottom-0';
+        refreshButton.innerHTML = '<i class="fas fa-sync-alt"></i><span>Refresh History</span>';
+        refreshButton.onclick = getPredictionHistory;
+        historyList.appendChild(refreshButton);
+      }
+
+      function togglePredictionHistory() {
+        const historyDiv = document.getElementById('prediction-history');
+        const isHidden = historyDiv.classList.contains('translate-x-full');
+        
+        if (isHidden) {
+          historyDiv.classList.remove('translate-x-full');
+          document.body.style.overflow = 'hidden'; // Prevent background scrolling
+          getPredictionHistory(); // Fetch history when opening
+        } else {
+          historyDiv.classList.add('translate-x-full');
+          document.body.style.overflow = ''; // Restore scrolling
+        }
+      }
+
+      // Update the history button
+      document.addEventListener('DOMContentLoaded', () => {
+        const historyButton = document.createElement('button');
+        historyButton.className = 'fixed bottom-4 right-4 bg-blue-600 text-white px-6 py-3 rounded-full shadow-lg hover:bg-blue-700 transition-all duration-200 flex items-center space-x-2 z-50';
+        historyButton.innerHTML = '<i class="fas fa-history"></i><span class="ml-2">View History</span>';
+        historyButton.onclick = togglePredictionHistory;
+        document.body.appendChild(historyButton);
+      });
+
+      function showMessage(message, type = 'info') {
+        const messageDiv = document.getElementById('auth-message');
+        messageDiv.textContent = message;
+        messageDiv.className = `mb-4 p-4 rounded ${
+          type === 'error' ? 'bg-red-100 text-red-700' : 
+          type === 'success' ? 'bg-green-100 text-green-700' : 
+          'bg-blue-100 text-blue-700'
+        }`;
+        messageDiv.classList.remove('hidden');
+        
+        // Hide message after 5 seconds
+        setTimeout(() => {
+          messageDiv.classList.add('hidden');
+        }, 5000);
+      }
+
+      // Add these functions to your existing JavaScript
+      function showLoginForm() {
+        document.getElementById('auth-modal').classList.remove('hidden');
+        document.getElementById('login-form').classList.remove('hidden');
+        document.getElementById('register-form').classList.add('hidden');
+        document.body.style.overflow = 'hidden';
+      }
+
+      function showRegisterForm() {
+        document.getElementById('auth-modal').classList.remove('hidden');
+        document.getElementById('register-form').classList.remove('hidden');
+        document.getElementById('login-form').classList.add('hidden');
+        document.body.style.overflow = 'hidden';
+      }
+
+      function closeAuthModal() {
+        document.getElementById('auth-modal').classList.add('hidden');
+        document.getElementById('login-form').classList.add('hidden');
+        document.getElementById('register-form').classList.add('hidden');
+        document.body.style.overflow = '';
+      }
+
+      async function handleLogin(event) {
+        event.preventDefault();
+        const email = document.getElementById('login-email').value;
+        const password = document.getElementById('login-password').value;
+
+        try {
+          const { data, error } = await supabase.auth.signInWithPassword({
+            email,
+            password
+          });
+
+          if (error) throw error;
+
+          // Show success message
+          showMessage('Logged in successfully!', 'success');
+          
+          // Update UI
+          document.getElementById('show-auth-button').classList.add('hidden');
+          document.getElementById('user-info').classList.remove('hidden');
+          document.getElementById('user-email').textContent = email;
+          
+          // Close modal
+          closeAuthModal();
+        } catch (error) {
+          showMessage(error.message, 'error');
+        }
+      }
+
+      async function handleRegister(event) {
+        event.preventDefault();
+        const email = document.getElementById('register-email').value;
+        const password = document.getElementById('register-password').value;
+
+        try {
+          const { data, error } = await supabase.auth.signUp({
+            email,
+            password
+          });
+
+          if (error) throw error;
+
+          showMessage('Registration successful! Please check your email for verification.', 'success');
+          showLoginForm();
+        } catch (error) {
+          showMessage(error.message, 'error');
+        }
+      }
+
+      async function handleLogout() {
+        try {
+          const { error } = await supabase.auth.signOut();
+          if (error) throw error;
+
+          // Update UI
+          document.getElementById('show-auth-button').classList.remove('hidden');
+          document.getElementById('user-info').classList.add('hidden');
+          showMessage('Logged out successfully', 'success');
+        } catch (error) {
+          showMessage(error.message, 'error');
+        }
+      }
+
+      // Check auth state on page load
+      document.addEventListener('DOMContentLoaded', async () => {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          document.getElementById('show-auth-button').classList.add('hidden');
+          document.getElementById('user-info').classList.remove('hidden');
+          document.getElementById('user-email').textContent = session.user.email;
+        }
+      });
+    </script>
+  </body>
+</html>

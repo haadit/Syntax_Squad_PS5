@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Loading...</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        overflow: hidden;
+      }
+
+      .loading-container {
+        text-align: center;
+        color: white;
+      }
+
+      .road {
+        width: 300px;
+        height: 100px;
+        background: #333;
+        position: relative;
+        margin: 20px auto;
+        overflow: hidden;
+      }
+
+      .lane-marker {
+        position: absolute;
+        width: 100%;
+        height: 10px;
+        background: repeating-linear-gradient(
+          to right,
+          white,
+          white 20px,
+          transparent 20px,
+          transparent 40px
+        );
+        animation: moveLane 2s linear infinite;
+      }
+
+      .car {
+        position: absolute;
+        width: 60px;
+        height: 30px;
+        background: #ff4444;
+        border-radius: 10px;
+        top: 35px;
+        left: -60px;
+        animation: moveCar 3s ease-in-out infinite;
+      }
+
+      .car::before {
+        content: "";
+        position: absolute;
+        width: 20px;
+        height: 20px;
+        background: #222;
+        border-radius: 50%;
+        top: 5px;
+        left: 5px;
+      }
+
+      .car::after {
+        content: "";
+        position: absolute;
+        width: 20px;
+        height: 20px;
+        background: #222;
+        border-radius: 50%;
+        top: 5px;
+        right: 5px;
+      }
+
+      .bus {
+        position: absolute;
+        width: 80px;
+        height: 40px;
+        background: #ffcc00;
+        border-radius: 10px;
+        top: 25px;
+        right: -80px;
+        animation: moveBus 4s ease-in-out infinite;
+      }
+
+      .bus::before {
+        content: "";
+        position: absolute;
+        width: 20px;
+        height: 20px;
+        background: #222;
+        border-radius: 50%;
+        top: 10px;
+        left: 5px;
+      }
+
+      .bus::after {
+        content: "";
+        position: absolute;
+        width: 20px;
+        height: 20px;
+        background: #222;
+        border-radius: 50%;
+        top: 10px;
+        right: 5px;
+      }
+
+      .loading-text {
+        font-size: 24px;
+        margin-top: 20px;
+        animation: pulse 1.5s infinite;
+      }
+
+      .status-message {
+        margin-top: 20px;
+        font-size: 16px;
+        color: #fff;
+        opacity: 0;
+        transition: opacity 0.5s ease;
+      }
+
+      .status-message.visible {
+        opacity: 1;
+      }
+
+      .error-message {
+        color: #ff4444;
+      }
+
+      @keyframes moveLane {
+        from {
+          transform: translateX(0);
+        }
+        to {
+          transform: translateX(-40px);
+        }
+      }
+
+      @keyframes moveCar {
+        0% {
+          transform: translateX(0);
+        }
+        100% {
+          transform: translateX(400px);
+        }
+      }
+
+      @keyframes moveBus {
+        0% {
+          transform: translateX(0);
+        }
+        100% {
+          transform: translateX(-400px);
+        }
+      }
+
+      @keyframes pulse {
+        0% {
+          opacity: 0.5;
+        }
+        50% {
+          opacity: 1;
+        }
+        100% {
+          opacity: 0.5;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="loading-container">
+      <div class="road">
+        <div class="lane-marker"></div>
+        <div class="car"></div>
+        <div class="bus"></div>
+      </div>
+      <div class="loading-text">Loading Commute Predictor...</div>
+      <div class="status-message" id="statusMessage"></div>
+    </div>
+
+    <script>
+      const statusMessage = document.getElementById("statusMessage");
+      let backendReady = false;
+
+      async function checkBackendHealth() {
+        try {
+          const response = await fetch("http://localhost:5000/health");
+          const data = await response.json();
+
+          if (data.status === "healthy" && data.model_loaded) {
+            statusMessage.textContent = "Backend connected successfully!";
+            statusMessage.classList.add("visible");
+            backendReady = true;
+          } else {
+            statusMessage.textContent =
+              "Model not loaded. Please try again later.";
+            statusMessage.classList.add("visible", "error-message");
+          }
+        } catch (error) {
+          statusMessage.textContent = "Connecting to backend...";
+          statusMessage.classList.add("visible");
+          setTimeout(checkBackendHealth, 2000);
+        }
+      }
+
+      // Start checking backend health
+      checkBackendHealth();
+
+      // Redirect to main page after animation and backend check
+      setTimeout(() => {
+        if (backendReady) {
+          window.location.href = "index.html";
+        } else {
+          statusMessage.textContent =
+            "Unable to connect to backend. Please try again later.";
+          statusMessage.classList.add("error-message");
+        }
+      }, 5000);
+    </script>
+  </body>
+</html>

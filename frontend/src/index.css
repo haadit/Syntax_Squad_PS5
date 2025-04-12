@@ -1,0 +1,168 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    @apply h-full;
+  }
+
+  body {
+    @apply h-full m-0 p-0;
+  }
+
+  #root {
+    @apply h-full;
+  }
+
+  h1 {
+    @apply text-3xl font-bold mb-6;
+  }
+
+  h2 {
+    @apply text-2xl font-semibold mb-4;
+  }
+
+  h3 {
+    @apply text-xl font-medium mb-3;
+  }
+}
+
+@layer components {
+  .input-field {
+    @apply w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg 
+           focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 
+           transition-all duration-200 bg-white;
+  }
+
+  .btn {
+    @apply px-6 py-2.5 rounded-lg font-semibold transition-all duration-200 
+           disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-primary {
+    @apply bg-primary-600 text-white hover:bg-primary-700 hover:shadow-lg 
+           active:transform active:scale-95 focus:ring-2 focus:ring-primary-500/20;
+  }
+
+  .btn-disabled {
+    @apply bg-gray-400 cursor-not-allowed;
+  }
+
+  .container-width {
+    @apply max-w-6xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+
+  .prediction-card {
+    @apply bg-white p-6 rounded-lg shadow-md border border-gray-100 
+           hover:shadow-lg transition-all duration-300;
+  }
+
+  .prediction-value {
+    @apply text-4xl font-bold text-primary-600 mb-3;
+  }
+
+  .prediction-label {
+    @apply text-gray-600 font-medium mb-2;
+  }
+
+  .confidence-interval {
+    @apply text-sm text-gray-500 font-medium;
+  }
+
+  .map-container {
+    @apply relative h-[400px] rounded-lg overflow-hidden border-2 border-gray-200 
+           shadow-sm bg-white;
+  }
+}
+
+/* Leaflet map styles */
+.leaflet-container {
+  height: 100%;
+  width: 100%;
+  z-index: 10;
+}
+
+.leaflet-control-container .leaflet-control {
+  z-index: 20;
+}
+
+.leaflet-popup-content {
+  padding: 0.5rem;
+}
+
+.leaflet-popup-content-wrapper {
+  @apply rounded-lg shadow-lg;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  @apply w-2;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-gray-100 rounded-full;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-gray-300 rounded-full hover:bg-gray-400 transition-colors;
+}
+
+/* Loading animation */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Smooth transitions */
+.transition-all {
+  transition-property: all;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 200ms;
+}
+
+/* Input styles */
+input[type="datetime-local"] {
+  @apply appearance-none bg-white border-2 border-gray-200 rounded-lg 
+         px-4 py-2.5 text-base text-gray-700 focus:outline-none 
+         focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 
+         transition-all duration-200;
+}
+
+/* Button styles */
+button {
+  @apply transition-all duration-200;
+}
+
+button:not(:disabled):hover {
+  @apply transform -translate-y-0.5;
+}
+
+button:not(:disabled):active {
+  @apply transform translate-y-0;
+}
+
+/* Card hover effects */
+.shadow-hover {
+  @apply transition-all duration-200;
+}
+
+.shadow-hover:hover {
+  @apply transform -translate-y-1 shadow-lg;
+}
+
+/* Map container */
+.map-container {
+  position: relative;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+} 
